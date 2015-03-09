@@ -1,0 +1,13 @@
+Aller dans le /Vrac/CPA/
+
+I: Les Expressions regulieres etendues
+1- find . -type f  -exec grep -lE "cpa" {} \;
+2- grep -REl "task_struct" *
+3- grep -REl "define task_struct" *
+4- find . -type f -exec grep -lE "black magic" {} \;
+5- find . -type f -exec grep -lE "ext2" {} \;
+6- find . -type f -exec grep -lE "ext2 group blocks" {} \;
+7- find . -type f -exec grep -lE "Linux Torvalds" {} \;
+
+II: Lexing/Parsing
+
