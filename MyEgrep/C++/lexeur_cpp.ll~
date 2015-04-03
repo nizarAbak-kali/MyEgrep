@@ -1,0 +1,35 @@
+%{
+#include <iostream>
+#include "parseur.tab.h" 
+#define YY_DECL extern "C" int yylex()
+%}
+
+accolade_ouvrante "{"
+accolade_fermante "}"
+crochet_ouvrant "["
+crochet_fermant "]"
+chiffes [0-9] 
+spec_char ["^" |  "."  |  "["  |  "$"  |  "("  |  ")"  |  "|" | "*"  |  "+"  |  "?"  |  "{"  |  "\"  ]
+ord_char [^{spec_char}]
+quoted_char ["\^" |  "\."  |  "\["  |  "\$"  |  "\("  |  "\)"  |  "\|" | "\*"  |  "\+"  |  "\?"  |  "\{"  |  "\\"  ]
+dup_count {chiffes}
+
+%%
+{accolade_fermante} {return (ACCF);}
+{accolade_ouvrante} {return (ACCO);}
+{crochet_fermant}	{return (CRHO);}
+{crochet_ouvrant}	{return (CRHF);}
+
+
+
+{quoted_char} 	{return (QUOTED_CHAR);}
+{dup_count}		{return (DUPCOUNT);}   
+{ord_char} 		{return (ORD_CHAR);}
+
+ 
+%%
+
+int main(void) {
+    yylex();
+    return 0;
+}

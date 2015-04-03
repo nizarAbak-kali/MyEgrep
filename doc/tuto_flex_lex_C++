@@ -1,0 +1,139 @@
+Afficher bonjour en c++
+L'exemple suivant permet de comprendre le fonctionnement de Flex en c++.
+
+Objectif
+Lorsque que l'analyseur détecte "coucou" il affiche "Bonjour".
+
+Réalisation
+Ajouter l'inclusion iostream pour l'utilisation de cout et endl.
+Forcer le compilateur g++ à ne pas faire de "name-mangling" pour l'identifiant "yylex" sinon le compilateur g++ génère un nom de fonction "_XYZyylexv", plus difficile à retrouver et à linker.
+
+Lorsque que l'analyseur détecte quelque chose qu'il reconnaît "coucou" il exécute le code associé "std::cout<<"Bonjour\r\n");"
+
+Fichier
+Ecrire le fichier "bonjour_cpp.l" :
+
+ 
+%{
+#include <iostream>
+#define YY_DECL extern "C" int yylex()
+%}
+ 
+%%
+coucou  std::cout << "Bonjour" << std::endl;
+ 
+%%
+int main(void) {
+    yylex();
+    return 0;
+}
+
+Compilation
+Générer le fichier analyseur "lex.yy.c" avec l'utilitaire flex
+$ flex bonjour_cpp.l
+
+Compiler le fichier "lex.yy.cc" avec g++. L'option –lfl permet de linker avec les librairie flex sinon essayer avec –ll qui utilise lex
+$ g++ lex.yy.cc –lfl –o bonjour
+
+Résultat
+Tester
+$ ./bonjour
+
+Saisir au clavier des caractères ceux-ci sont reproduit sur l'écran tel que. Essayer en écrivant "coucou" et l'analyseur affiche "bonjour".
+test
+test
+divers
+divers
+coucou
+Bonjour
+
+Reconnaître quelle est le type de donnée
+L'exemple suivant permet de reconnaître le type de données.
+
+Objectif
+L'utilisateur saisie au clavier, un entier, un nombre à virgule ou une chaîne de caractères et le parseur affiche le type. Le parseur ignore les espaces, les tabulations et les retours à la lignes.
+
+Réalisation
+Créer quatre expression régulières pour :
+1. Reconnaître les entiers. Soit tous les chiffres de compris entre 0 et 9 quelque soit le nombre d'occurrence.
+[0-9]+
+2. Reconnaître les nombres à virgules. Soit tous les nombres entiers séparés par une virgules.
+[0-9]+,[0-9]+
+3. Reconnaître les chaînes de caractères. Soit tous les caractères alphanumérique compris de a à z, de A à Z et de 0 à 9 quelque soit le nombre d'occurrence.
+[a-zA-Z0-9]+
+4. Ignorer les espaces, les tabulations et les retours à la ligne.
+[ \t\n]+
+
+Définir les priorités :
+1. Ignorer les espaces, les tabulations et les retours à la ligne.
+2. Reconnaître les nombres à virgules.
+3. Reconnaître les entiers.
+4. Reconnaître les chaînes de caractères
+
+Fichier
+Ecrire le fichier "quelletype.l" :
+
+ %{
+ #include <iostream>
+ #define YY_DECL extern "C" int yylex()
+ %}
+ 
+ %%
+ [ \t\n]       ;
+ [0-9]+,[0-9]+ { std::cout << "Nombre à virgule : " << yytext << std::endl; }
+ [0-9]+        { std::cout << "Nombre entier : " << yytext << std::endl; }
+ [a-zA-Z0-9]+  { std::cout << "Chaine de caractères : " << yytext << std::endl; }
+ 
+ %%
+ int main(void) {
+   yylex();
+   return 0;
+ }
+
+
+Détails :
+- Lignes 6 et 12 : Les sections sont divisé par des %%
+- Lignes 1 et 4 : Les délimiteurs signalent que les lignes 2 à 4 sont du code à recopier dans le lexer généré.
+- Ligne 2 : La Définition permet l'utilisation du "cout".
+- Ligne 3 : Le define force le compilateur g++ à ne pas faire de "name-mangling" pour l'identifiant "yylex". Sans faire ceci le compilateur g++ génère un nom de fonction comme "_Z5yylexv", difficile à retrouver ou à linker
+
+- Ligne 6 : Le délimiter %% signifie que l'on passe de la section de control à la section motif. Noter que l'on ne peut pas avoir beaucoup plus dans la section control. La section control de Bison permet plus de chose que la section control de Flex.
+- Lignes 7 à 10 : Elles représentent une expression régulière suivi d'une action. Lorsque Flex lit une entrée correspondant à une des expressions régulières il exécute l'action. L'expression régulière n'est pas de type Perl les "\d" sont interdit mais le reste fonctionne. L'action est du code C ou C++ qui est copié dans la sortie Flex. Il est possible d'avoir une simple action ou bien des accolades avec plusieurs actions. Une spécificité du format est que l'action doit être justifié à gauche. Si il y a des espaces au début de la ligne où une pattern est attendu la ligne est considérée comme un commentaire. La séparation entre une pattern et une action est un espaces. L'action peut être décrite sur plusieurs lignes si elle est encadrée par des accolades.
+
+- Ligne 12 : Le délimiteur %% signifie que l'on passe de la section motif à le dernière section code C ou C++.
+- Ligne 13 à 16 : Le code est recopié. Contrairement à la première section il n'y a pas de délimiteurs "%{" et "%}". Pour le fichier Flex cette section n'est pas utile mais pour cet exemple une fonction "main" permet d'exécuter la sortie sans avoir à créer un autre fichier à linker.
+
+Compilation
+Compiler avec la commande :
+% flex quelletype.l
+
+Cela produit le fichier "lex.yy.c" qui peut être compilé avec g++ :
+% g++ lex.yy.cc –lfl –o quelletype
+
+L'option "-lfl" permet de linker avec les librairies Flex. Si Flex n'est pas installé essayer "-ll" qui utilisera les librairies Lex au lieu de Flex.
+
+Résultat
+Exécuter et saisir sur l'entrée standard STDIN pour être analyser :
+% ./quelletype
+1
+Nombre entier : 1
+23
+Nombre entier : 23
+4,5
+Nombre à virgule : 4,5
+6 texte à afficher
+Nombre entier : 6
+Chaine de caractères : texte
+àChaine de caractères : afficher
+7 texte et chiffre 8
+Nombre entier : 7
+Chaine de caractères : texte
+Chaine de caractères : et
+Chaine de caractères : chiffre
+Nombre entier : 8
+!
+!
+
+
+Le point d'exclamation à la fin est réécrit : lorsque Flex trouve quelque chose qui ne correspond à aucune des expressions régulières il l'écrit sur la sortie standard STDOUT. C'est une bonne indication que la définition des motifs n'est pas suffisamment complète.
+
